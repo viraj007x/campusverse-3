@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+.venv/
+venv/
+
+# Build output
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Secrets and local config
+.env
+.env.*
+!.env.example
+
+# Runtime state
+*.db
+*.sqlite3
+*.log
+
+# Regenerated indexes and model weights
+backend/chroma_db/
+backend/models_data/
+backend/artifacts/*.joblib
+
+# Large / downloaded datasets and user uploads
+backend/data/
+data/uploads/
+
+# OS files
+.DS_Store
+Thumbs.db
