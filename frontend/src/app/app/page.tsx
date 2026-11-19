@@ -396,7 +396,7 @@ export default function OverviewPage() {
                       <div key={c.id} className="rounded-lg border border-line/60 bg-slate-50 px-3 py-2.5">
                         <p className="line-clamp-2 text-[12.5px] text-slate-700">{c.question}</p>
                         <p className="mt-1 flex items-center gap-1.5 text-[10px] text-slate-400">
-                          <Clock3 className="h-3 w-3" /> {timeAgo(c.created_at)} · {c.mode}
+                          <Clock3 className="h-3 w-3" /> {timeAgo(c.created_at)} · {c.mode === "offline" ? "local engine" : c.mode}
                         </p>
                       </div>
                     ))}

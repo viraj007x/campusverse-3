@@ -211,6 +211,7 @@ type Metrics = {
   extended_stats: Record<string, { mean: number; std: number }>;
   stats: Record<string, { mean: number; std: number }>;
   tiers: { high: number; medium: number };
+  evaluation?: { split: string; test_learners: number; feature_window: string };
 };
 
 type ModelState = {
@@ -689,6 +690,11 @@ function ModelSummaryCard({ metrics }: { metrics: Metrics | null }) {
             {metrics.n_rows.toLocaleString("en-IN")} rows · {Math.round(metrics.positive_rate * 100)}% high-risk · trained{" "}
             {timeAgo(metrics.trained_at)}
           </p>
+          {metrics.evaluation && (
+            <p className="mt-0.5 text-[10.5px] text-slate-400">
+              {metrics.evaluation.split} · {metrics.evaluation.feature_window}
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-1.5">
           <Badge tone="success">{metrics.best} wins</Badge>
@@ -917,10 +923,7 @@ function DecisionRulesCard({ metrics }: { metrics: Metrics | null }) {
 const SLIDER_FIELDS = [
   { key: "attendance_pct", label: "VLE engagement", min: 0, max: 100, step: 1, unit: "%" },
   { key: "assignment_avg", label: "Assignment avg", min: 0, max: 10, step: 0.1, unit: "/10" },
-  { key: "internal_avg", label: "Internal marks", min: 0, max: 100, step: 1, unit: "%" },
-  { key: "ai_flag_rate", label: "AI-flagged submissions", min: 0, max: 60, step: 1, unit: "%" },
   { key: "prev_backlogs", label: "Previous attempts", min: 0, max: 6, step: 1, unit: "" },
-  { key: "prev_sgpa", label: "Early score /10", min: 0, max: 10, step: 0.1, unit: "" },
   { key: "semester", label: "Presentation", min: 1, max: 2, step: 1, unit: "" },
 ] as const;
 
@@ -933,10 +936,7 @@ function scenarioDefaults(metrics: Metrics | null): SimForm {
   return {
     attendance_pct: Math.round(mean("attendance_pct", 26)),
     assignment_avg: mean("assignment_avg", 5.7),
-    internal_avg: Math.round(mean("internal_avg", 57)),
-    ai_flag_rate: Math.round(mean("ai_flag_rate", 0)),
     prev_backlogs: Math.round(mean("prev_backlogs", 0.3)),
-    prev_sgpa: mean("prev_sgpa", 5.6),
     semester: 1,
   };
 }
@@ -1541,7 +1541,7 @@ function ClustersTab({ clusters }: { clusters: ClusterInfo[] }) {
               </div>
             </div>
             <div className="mt-2.5 flex items-center justify-between text-[10px] text-slate-500">
-              <span className="flex items-center gap-1"><Lightbulb className="h-3 w-3 text-amber-500" /> {c.avg_study_hours} h/week study</span>
+              <span className="flex items-center gap-1"><Lightbulb className="h-3 w-3 text-amber-500" /> {c.avg_study_hours} VLE clicks/wk</span>
               <span className="flex items-center gap-1"><Activity className="h-3 w-3 text-brand" /> risk {Math.round(c.avg_risk * 100)}%</span>
             </div>
             <div className="mt-2 h-1 overflow-hidden rounded-full bg-slate-100">
@@ -1841,15 +1841,16 @@ function TwinHeader({ record }: { record: Detail }) {
           </div>
         </div>
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] sm:grid-cols-4 xl:grid-cols-7">
+      <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] sm:grid-cols-4 xl:grid-cols-8">
         {[
           { label: "VLE engagement", value: `${record.attendance_pct}%` },
           { label: "Assignments", value: `${record.assignment_avg}/10` },
-          { label: "Internals", value: `${record.internal_avg}%` },
-          { label: "Practical", value: `${record.practical_avg}%` },
-          { label: "Prev SGPA", value: record.prev_sgpa.toFixed(2) },
+          { label: "Completion", value: `${record.assignment_completion}%` },
+          { label: "VLE clicks", value: Math.round(record.lms_activity).toLocaleString("en-IN") },
+          { label: "Active days", value: record.library_visits },
+          { label: "Final exam", value: `${record.practical_avg}%` },
           { label: "Final SGPA", value: record.final_sgpa.toFixed(2) },
-          { label: "Backlogs", value: record.prev_backlogs },
+          { label: "Attempts", value: record.prev_backlogs },
         ].map((item) => (
           <div key={item.label} className="rounded border border-line bg-slate-50/70 px-2.5 py-1.5">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{item.label}</p>
@@ -1906,7 +1907,7 @@ function TwinNarrative({ record }: { record: Detail }) {
       <div className="mt-3 flex flex-wrap gap-1.5">
         <Badge tone="neutral">model {record.model_basis.replace("model:", "")}</Badge>
         <Badge tone={riskTone(record.model_label)}>predicted {Math.round(record.model_risk * 100)}%</Badge>
-        <Badge tone="accent">study {record.study_hours} h/wk</Badge>
+        <Badge tone="accent">VLE {record.study_hours} clicks/wk</Badge>
         <Badge tone="neutral">{record.library_visits} active study days</Badge>
       </div>
     </Card>
@@ -1938,7 +1939,7 @@ function TwinSkills({ record }: { record: Detail }) {
         {twin.skills.communication > 0 && <Meter label="Communication" value={twin.skills.communication} tone="#7a5af8" />}
         <Meter label="LMS activity" value={twin.skills.lms} tone={SUCCESS} />
         <Meter label="Placement readiness" value={twin.skills.placement_readiness} tone={BRAND} />
-        <Meter label="Study hours / week" value={twin.skills.study_hours} max={30} tone={WARN} />
+        <Meter label="VLE clicks / week" value={twin.skills.study_hours} max={100} tone={WARN} />
       </div>
       {twin.skills.coding <= 0 && twin.skills.communication <= 0 && (
         <p className="mt-2 text-[10px] leading-relaxed text-slate-400">
@@ -2128,9 +2129,7 @@ function WhatIfPanel({ record }: { record: Detail }) {
   const [form, setForm] = useState({
     attendance_pct: record.attendance_pct,
     assignment_avg: record.assignment_avg,
-    internal_avg: record.internal_avg,
     prev_backlogs: record.prev_backlogs,
-    prev_sgpa: record.prev_sgpa,
   });
   const [result, setResult] = useState<{ risk_score: number; risk_label: string; predicted_sgpa: number; basis: string } | null>(null);
   const [running, setRunning] = useState(false);
@@ -2139,9 +2138,7 @@ function WhatIfPanel({ record }: { record: Detail }) {
     setForm({
       attendance_pct: record.attendance_pct,
       assignment_avg: record.assignment_avg,
-      internal_avg: record.internal_avg,
       prev_backlogs: record.prev_backlogs,
-      prev_sgpa: record.prev_sgpa,
     });
   }, [record]);
 
@@ -2150,16 +2147,16 @@ function WhatIfPanel({ record }: { record: Detail }) {
       setRunning(true);
       api<{ risk_score: number; risk_label: string; predicted_sgpa: number; basis: string }>("/api/performance/what-if", {
         method: "POST",
-        json: { ...form, semester: record.semester, ai_flag_rate: record.ai_flag_rate },
+        json: { ...form, semester: record.semester },
       })
         .then(setResult)
         .catch(() => undefined)
         .finally(() => setRunning(false));
     }, 220);
     return () => clearTimeout(handle);
-  }, [form, record.semester, record.ai_flag_rate]);
+  }, [form, record.semester]);
 
-  const delta = result ? result.risk_score - record.risk_score : 0;
+  const delta = result ? result.predicted_sgpa - record.model_sgpa : 0;
 
   return (
     <Card>
@@ -2182,14 +2179,14 @@ function WhatIfPanel({ record }: { record: Detail }) {
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Forecast SGPA</p>
           <p className="mt-0.5 text-[26px] font-semibold leading-none text-slate-900">{result ? result.predicted_sgpa.toFixed(2) : "—"}</p>
-          <p className={cn("mt-1 text-[10px]", delta <= 0 ? "text-emerald-600" : "text-red-600")}>
-            {result ? `${delta > 0 ? "+" : ""}${(delta * 100).toFixed(1)} pp vs current` : ""}
+          <p className={cn("mt-1 text-[10px]", delta >= 0 ? "text-emerald-600" : "text-red-600")}>
+            {result ? `${delta > 0 ? "+" : ""}${delta.toFixed(2)} SGPA vs model` : ""}
           </p>
         </div>
       </div>
 
       <div className="mt-3 space-y-2.5">
-        {SLIDER_FIELDS.filter((f) => f.key !== "semester" && f.key !== "ai_flag_rate").map((field) => (
+        {SLIDER_FIELDS.filter((f) => f.key !== "semester").map((field) => (
           <div key={field.key}>
             <div className="flex items-center justify-between text-[10.5px]">
               <span className="text-slate-600">{field.label}</span>
@@ -2219,9 +2216,7 @@ function WhatIfPanel({ record }: { record: Detail }) {
             setForm({
               attendance_pct: record.attendance_pct,
               assignment_avg: record.assignment_avg,
-              internal_avg: record.internal_avg,
               prev_backlogs: record.prev_backlogs,
-              prev_sgpa: record.prev_sgpa,
             })
           }
         >

@@ -16,7 +16,7 @@ from ..models import PerformanceRecord, User
 from . import realdata
 
 TOTAL_RECORDS = 100_000
-DATASET_VERSION = 3
+DATASET_VERSION = 4
 ENGAGEMENT_TARGET = 5.0  # active-day engagement below this marks the low-engagement watchlist (~bottom quarter of OULAD)
 CHUNK = 10_000
 ARTIFACT_DIR = settings.backend_dir / "artifacts" if hasattr(settings, "backend_dir") else Path(__file__).resolve().parents[2] / "artifacts"
@@ -48,48 +48,30 @@ LAST_NAMES = [
 FEATURES = [
     "attendance_pct",
     "assignment_avg",
-    "internal_avg",
-    "ai_flag_rate",
     "prev_backlogs",
-    "prev_sgpa",
     "semester",
 ]
 FEATURE_LABELS = {
     "attendance_pct": "VLE engagement",
     "assignment_avg": "Assignment average",
-    "internal_avg": "Internal marks",
-    "ai_flag_rate": "AI-flagged submissions",
-    "prev_backlogs": "Previous backlogs",
-    "prev_sgpa": "Previous SGPA",
-    "semester": "Semester",
+    "prev_backlogs": "Previous attempts",
+    "semester": "Presentation",
 }
 # Features where a lower value increases risk
-LOW_IS_BAD = {"attendance_pct", "assignment_avg", "internal_avg", "prev_sgpa"}
+LOW_IS_BAD = {"attendance_pct", "assignment_avg"}
 
-EXTENDED_FEATURES = FEATURES + [
-    "practical_avg",
+ATTENDANCE_FEATURES = FEATURES + [
     "assignment_completion",
     "study_hours",
     "library_visits",
     "lms_activity",
-    "coding_skill",
-    "communication_skill",
-    "certifications",
-    "internship_months",
-    "placement_readiness",
 ]
-EXTENDED_LABELS = {
+ATTENDANCE_LABELS = {
     **FEATURE_LABELS,
-    "practical_avg": "Exam / practical marks",
-    "assignment_completion": "Assignment completion",
-    "study_hours": "VLE clicks / week",
-    "library_visits": "Active study days",
-    "lms_activity": "VLE clicks",
-    "coding_skill": "Coding skill",
-    "communication_skill": "Communication skill",
-    "certifications": "Certifications",
-    "internship_months": "Internship months",
-    "placement_readiness": "Placement readiness (derived)",
+    "assignment_completion": "Assignment completion (early)",
+    "study_hours": "VLE clicks / week (early)",
+    "library_visits": "Active study days (early)",
+    "lms_activity": "VLE clicks (early)",
 }
 CLUSTER_FEATURES = [
     "attendance_pct",
@@ -186,10 +168,7 @@ _state = {
 FEATURE_DEFAULTS = {
     "attendance_pct": 20.0,
     "assignment_avg": 5.7,
-    "internal_avg": 57.0,
-    "ai_flag_rate": 0.0,
     "prev_backlogs": 0,
-    "prev_sgpa": 5.6,
     "semester": 1,
 }
 
@@ -198,15 +177,13 @@ def state() -> dict:
     return dict(_state, metrics_ready=METRICS_PATH.exists())
 
 
-def _risk_logit(attendance: float, assignment: float, internal: float, ai_flag: float, backlogs: float, prev_sgpa: float) -> float:
+def _risk_logit(attendance: float, assignment: float, backlogs: float, semester: float) -> float:
     return (
-        -3.6
-        - 0.09 * (attendance - 76)
-        - 0.55 * (assignment - 6.3)
-        - 0.04 * (internal - 64)
-        + 0.70 * backlogs
-        + 0.02 * (ai_flag - 15)
-        - 0.50 * (prev_sgpa - 6.4)
+        -1.15
+        - 0.055 * (attendance - 25)
+        - 0.85 * (assignment - 5.5)
+        + 0.55 * backlogs
+        + 0.06 * (semester - 1)
     )
 
 
@@ -525,27 +502,26 @@ def ensure_dataset(db: Session) -> int:
 
 
 def _dataset(db: Session):
-    extras = EXTENDED_FEATURES[len(FEATURES) :]
-    columns = [getattr(PerformanceRecord, f) for f in FEATURES + extras]
+    columns = [getattr(PerformanceRecord, f) for f in ATTENDANCE_FEATURES]
     rows = db.execute(
         select(
             *columns,
             PerformanceRecord.risk_label,
             PerformanceRecord.final_sgpa,
             PerformanceRecord.attendance_next,
+            PerformanceRecord.roll_no,
         )
     ).all()
     features = len(FEATURES)
-    extra_count = len(extras)
-    label_at = features + extra_count
+    attendance_features = len(ATTENDANCE_FEATURES)
+    label_at = attendance_features
     X = np.asarray([tuple(r[i] for i in range(features)) for r in rows], dtype=np.float32)
     y = np.asarray([1 if r[label_at] == "high" else 0 for r in rows], dtype=np.int8)
     sgpa = np.asarray([r[label_at + 1] for r in rows], dtype=np.float32)
-    X_ext = np.asarray(
-        [tuple(r[0:label_at]) for r in rows], dtype=np.float32
-    )
+    X_att = np.asarray([tuple(r[0:attendance_features]) for r in rows], dtype=np.float32)
     attendance = np.asarray([r[label_at + 2] for r in rows], dtype=np.float32)
-    return X, y, sgpa, X_ext, attendance
+    groups = np.asarray([str(r[label_at + 3]).rsplit("-", 1)[-1] for r in rows])
+    return X, y, sgpa, X_att, attendance, groups
 
 
 def _tree_rules(tree, top: int = 6) -> list[dict]:
@@ -643,19 +619,18 @@ def train_models(db: Session, force: bool = False) -> dict:
             recall_score,
             roc_auc_score,
         )
-        from sklearn.model_selection import train_test_split
+        from sklearn.model_selection import GroupShuffleSplit
         from sklearn.pipeline import make_pipeline
         from sklearn.preprocessing import StandardScaler
         from sklearn.tree import DecisionTreeClassifier
 
         started = time.perf_counter()
-        X, y, sgpa, X_ext, attendance_next = _dataset(db)
-        split = np.arange(len(y))
-        train_idx, test_idx = train_test_split(split, test_size=0.2, random_state=42, stratify=y)
+        X, y, sgpa, X_att, attendance_next, groups = _dataset(db)
+        splitter = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+        train_idx, test_idx = next(splitter.split(X, y, groups))
         x_train, x_test = X[train_idx], X[test_idx]
         y_train, y_test = y[train_idx], y[test_idx]
-        s_train, s_test = sgpa[train_idx], sgpa[test_idx]
-        xe_train, xe_test = X_ext[train_idx], X_ext[test_idx]
+        xe_train, xe_test = X_att[train_idx], X_att[test_idx]
         a_train, a_test = attendance_next[train_idx], attendance_next[test_idx]
 
         candidates = {
@@ -741,16 +716,21 @@ def train_models(db: Session, force: bool = False) -> dict:
 
         regressors = []
         reg_fitted = {}
+        # OULAD learners with no submitted assessment have final_sgpa 0; scoring them as easy
+        # zeros inflates R², so grade-forecast metrics use only learners with a real outcome.
+        graded_train = train_idx[sgpa[train_idx] > 0]
+        graded_test = test_idx[sgpa[test_idx] > 0]
         for name, model in reg_candidates.items():
             t0 = time.perf_counter()
-            model.fit(x_train, s_train)
+            model.fit(X[graded_train], sgpa[graded_train])
             reg_ms = (time.perf_counter() - t0) * 1000
-            pred = model.predict(x_test)
+            pred = model.predict(X[graded_test])
             regressors.append(
                 {
                     "name": name,
-                    "r2": round(float(r2_score(s_test, pred)), 4),
-                    "mae": round(float(mean_absolute_error(s_test, pred)), 3),
+                    "r2": round(float(r2_score(sgpa[graded_test], pred)), 4),
+                    "mae": round(float(mean_absolute_error(sgpa[graded_test], pred)), 3),
+                    "n": int(len(graded_test)),
                     "train_ms": round(reg_ms),
                 }
             )
@@ -786,8 +766,8 @@ def train_models(db: Session, force: bool = False) -> dict:
             for i, feature in enumerate(FEATURES)
         }
         extended_stats = {
-            feature: {"mean": round(float(X_ext[:, i].mean()), 2), "std": round(float(X_ext[:, i].std()), 2)}
-            for i, feature in enumerate(EXTENDED_FEATURES)
+            feature: {"mean": round(float(X_att[:, i].mean()), 2), "std": round(float(X_att[:, i].std()), 2)}
+            for i, feature in enumerate(ATTENDANCE_FEATURES)
         }
         clusters = _cluster_summary(db)
         anomaly_count = db.query(func.count(PerformanceRecord.id)).filter(PerformanceRecord.anomaly_flag.is_(True)).scalar() or 0
@@ -811,17 +791,22 @@ def train_models(db: Session, force: bool = False) -> dict:
             "anomalies": {"count": int(anomaly_count), "pct": round(100 * anomaly_count / max(1, len(y)), 2)},
             "feature_names": FEATURE_LABELS,
             "feature_importances": {f: round(float(shares[i]), 4) for i, f in enumerate(FEATURES)},
-            "extended_feature_names": EXTENDED_LABELS,
+            "extended_feature_names": ATTENDANCE_LABELS,
             "extended_stats": extended_stats,
             "stats": stats,
             "tiers": {"high": 0.60, "medium": 0.32},
+            "evaluation": {
+                "split": "GroupShuffleSplit by learner (80/20)",
+                "test_learners": int(len(set(groups[test_idx]))),
+                "feature_window": "Early 40% of the presentation only",
+            },
         }
         artifact = {
             "classifier": best_model,
             "regressor": regressor,
             "attendance": attendance_model,
             "features": FEATURES,
-            "extended_features": EXTENDED_FEATURES,
+            "attendance_features": ATTENDANCE_FEATURES,
             "metrics": metrics,
         }
         try:
@@ -1029,13 +1014,7 @@ def predict(features: dict) -> dict:
             value = max(0, min(12, round(value)))
         elif feature == "attendance_pct":
             value = max(0, min(100, value))
-        elif feature == "internal_avg":
-            value = max(0, min(100, value))
-        elif feature == "ai_flag_rate":
-            value = max(0, min(100, value))
         elif feature == "assignment_avg":
-            value = max(0, min(10, value))
-        elif feature == "prev_sgpa":
             value = max(0, min(10, value))
         clean[feature] = value
         values.append(value)
@@ -1047,11 +1026,12 @@ def predict(features: dict) -> dict:
         sgpa = float(model["regressor"].predict(x)[0])
         basis = f"model:{model['metrics']['best']}"
     else:
-        proba = 1 / (1 + math.exp(-_risk_logit(clean["attendance_pct"], clean["assignment_avg"], clean["internal_avg"], clean["ai_flag_rate"], clean["prev_backlogs"], clean["prev_sgpa"])))
+        proba = 1 / (1 + math.exp(-_risk_logit(clean["attendance_pct"], clean["assignment_avg"], clean["prev_backlogs"], clean["semester"])))
         sgpa = (
-            clean["prev_sgpa"]
-            + 0.25 * (0.6 * clean["attendance_pct"] / 100 + 0.4 * clean["assignment_avg"] / 10 - 0.65)
-            - 0.15 * clean["prev_backlogs"]
+            clean["assignment_avg"]
+            + 0.03 * (clean["attendance_pct"] - 25)
+            - 0.25 * clean["prev_backlogs"]
+            + 0.10 * (clean["semester"] - 1)
         )
         basis = "analytic"
 
@@ -1070,7 +1050,7 @@ def _attendance_forecast(record: PerformanceRecord) -> dict:
     expected = float(record.attendance_pct)
     basis = "current"
     if model and model.get("attendance") is not None:
-        values = [getattr(record, f) for f in EXTENDED_FEATURES]
+        values = [getattr(record, f) for f in ATTENDANCE_FEATURES]
         expected = float(model["attendance"].predict(np.asarray([values], dtype=np.float32))[0])
         basis = "model"
     expected = max(0.0, min(100.0, expected))
@@ -1287,8 +1267,9 @@ def detail(db: Session, roll_no: str) -> dict | None:
     metrics = get_metrics()
     data = _row_dict(record)
     data["drivers"] = _drivers(record)
+    cohort_sgpa = db.query(func.avg(PerformanceRecord.final_sgpa)).scalar()
     data["cohort"] = {
-        "avg_sgpa": metrics["stats"]["prev_sgpa"]["mean"] if metrics else None,
+        "avg_sgpa": round(float(cohort_sgpa), 2) if cohort_sgpa is not None else None,
         "avg_attendance": metrics["stats"]["attendance_pct"]["mean"] if metrics else None,
     }
     prediction = predict({feature: getattr(record, feature) for feature in FEATURES})

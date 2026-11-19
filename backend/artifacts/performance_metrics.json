@@ -1,9 +1,9 @@
 {
   "status": "ready",
-  "version": 3,
+  "version": 4,
   "n_rows": 32593,
   "data_source": {
-    "name": "OULAD — Open University Learning Analytics Dataset",
+    "name": "OULAD \u2014 Open University Learning Analytics Dataset",
     "provider": "The Open University (UK)",
     "license": "CC BY 4.0",
     "url": "https://analyse.kmi.open.ac.uk/open_dataset",
@@ -11,233 +11,238 @@
     "note": "Anonymised real learner records. VLE = virtual learning environment (the online study platform); engagement is measured as active study days and stands in for attendance because OULAD has no classroom roll-call. Placement readiness is a derived estimate from real assessment and engagement outcomes; skills, certifications and internships are not present in OULAD."
   },
   "positive_rate": 0.528,
-  "trained_at": "2026-11-19T15:47:39Z",
-  "total_train_ms": 5505,
+  "trained_at": "2026-11-19T17:18:42Z",
+  "total_train_ms": 3833,
   "ingest_ms": 0,
   "models": [
     {
       "name": "Logistic Regression",
-      "accuracy": 0.776,
-      "precision": 0.8136,
-      "recall": 0.7469,
-      "f1": 0.7789,
+      "accuracy": 0.7779,
+      "precision": 0.8207,
+      "recall": 0.7382,
+      "f1": 0.7773,
       "roc_auc": 0.8676,
-      "train_ms": 19,
-      "infer_ms_per_1k": 0.4
-    },
-    {
-      "name": "Decision Tree",
-      "accuracy": 0.78,
-      "precision": 0.8134,
-      "recall": 0.7571,
-      "f1": 0.7842,
-      "roc_auc": 0.8695,
-      "train_ms": 35,
+      "train_ms": 12,
       "infer_ms_per_1k": 0.3
     },
     {
+      "name": "Decision Tree",
+      "accuracy": 0.7756,
+      "precision": 0.8289,
+      "recall": 0.7216,
+      "f1": 0.7715,
+      "roc_auc": 0.8674,
+      "train_ms": 11,
+      "infer_ms_per_1k": 0.1
+    },
+    {
       "name": "Random Forest",
-      "accuracy": 0.7931,
-      "precision": 0.846,
-      "recall": 0.7435,
-      "f1": 0.7914,
-      "roc_auc": 0.8797,
-      "train_ms": 320,
-      "infer_ms_per_1k": 28.4
+      "accuracy": 0.7834,
+      "precision": 0.8317,
+      "recall": 0.7365,
+      "f1": 0.7812,
+      "roc_auc": 0.8728,
+      "train_ms": 224,
+      "infer_ms_per_1k": 24.8
     },
     {
       "name": "HistGradientBoosting",
-      "accuracy": 0.7915,
-      "precision": 0.8387,
-      "recall": 0.7493,
-      "f1": 0.7915,
-      "roc_auc": 0.8777,
-      "train_ms": 396,
-      "infer_ms_per_1k": 3.6
+      "accuracy": 0.7882,
+      "precision": 0.8326,
+      "recall": 0.7467,
+      "f1": 0.7873,
+      "roc_auc": 0.8765,
+      "train_ms": 150,
+      "infer_ms_per_1k": 1.5
     },
     {
       "name": "LightGBM",
-      "accuracy": 0.7883,
-      "precision": 0.8358,
-      "recall": 0.7455,
-      "f1": 0.7881,
-      "roc_auc": 0.8768,
-      "train_ms": 326,
-      "infer_ms_per_1k": 31.9
+      "accuracy": 0.7771,
+      "precision": 0.8219,
+      "recall": 0.7347,
+      "f1": 0.7759,
+      "roc_auc": 0.8708,
+      "train_ms": 241,
+      "infer_ms_per_1k": 4.4
     },
     {
       "name": "XGBoost",
-      "accuracy": 0.7938,
-      "precision": 0.8424,
-      "recall": 0.7499,
-      "f1": 0.7934,
-      "roc_auc": 0.8808,
-      "train_ms": 649,
-      "infer_ms_per_1k": 1.8
+      "accuracy": 0.783,
+      "precision": 0.83,
+      "recall": 0.7377,
+      "f1": 0.7811,
+      "roc_auc": 0.8766,
+      "train_ms": 1291,
+      "infer_ms_per_1k": 1.3
     }
   ],
   "best": "XGBoost",
   "confusion": {
-    "tn": 2594,
-    "fp": 483,
-    "fn": 861,
-    "tp": 2581
+    "tn": 2580,
+    "fp": 517,
+    "fn": 898,
+    "tp": 2525
   },
   "regression": {
     "name": "LightGBM Regressor",
-    "r2": 0.9271,
-    "mae": 0.532,
-    "train_ms": 331
+    "r2": 0.7151,
+    "mae": 0.633,
+    "n": 5172,
+    "train_ms": 183
   },
   "regressors": [
     {
       "name": "Linear Regression",
-      "r2": 0.9202,
-      "mae": 0.563,
-      "train_ms": 3
+      "r2": 0.6453,
+      "mae": 0.686,
+      "n": 5172,
+      "train_ms": 2
     },
     {
       "name": "Random Forest Regressor",
-      "r2": 0.9266,
-      "mae": 0.536,
-      "train_ms": 440
+      "r2": 0.7135,
+      "mae": 0.633,
+      "n": 5172,
+      "train_ms": 232
     },
     {
       "name": "HistGradientBoosting Regressor",
-      "r2": 0.9248,
-      "mae": 0.549,
-      "train_ms": 189
+      "r2": 0.7118,
+      "mae": 0.632,
+      "n": 5172,
+      "train_ms": 140
     },
     {
       "name": "LightGBM Regressor",
-      "r2": 0.9271,
-      "mae": 0.532,
-      "train_ms": 331
+      "r2": 0.7151,
+      "mae": 0.633,
+      "n": 5172,
+      "train_ms": 183
     }
   ],
   "attendance_model": {
     "name": "Random Forest Regressor",
-    "r2": 0.7015,
-    "mae": 5.889,
-    "train_ms": 1509
+    "r2": 0.6337,
+    "mae": 6.878,
+    "train_ms": 771
   },
   "decision_rules": [
     {
       "conditions": [
-        "Assignment average ≤ 5.40",
-        "Previous SGPA ≤ 4.42",
-        "Previous SGPA ≤ 3.75",
-        "VLE engagement ≤ 13.40",
-        "VLE engagement ≤ 2.85"
+        "Assignment average \u2264 5.40",
+        "Assignment average \u2264 4.42",
+        "Assignment average \u2264 3.50",
+        "VLE engagement \u2264 16.05",
+        "VLE engagement \u2264 1.50"
       ],
-      "samples": 4300,
+      "samples": 3798,
       "high_risk_pct": 99.8
     },
     {
       "conditions": [
-        "Assignment average ≤ 5.40",
-        "Previous SGPA ≤ 4.42",
-        "Previous SGPA ≤ 3.75",
-        "VLE engagement ≤ 13.40",
-        "VLE engagement > 2.85"
+        "Assignment average \u2264 5.40",
+        "Assignment average \u2264 4.42",
+        "Assignment average \u2264 3.50",
+        "VLE engagement \u2264 16.05",
+        "VLE engagement > 1.50"
       ],
-      "samples": 1455,
-      "high_risk_pct": 97.9
+      "samples": 2075,
+      "high_risk_pct": 98.1
     },
     {
       "conditions": [
-        "Assignment average ≤ 5.40",
-        "Previous SGPA ≤ 4.42",
-        "Previous SGPA > 3.75",
-        "Semester > 1.50",
-        "Assignment average ≤ 4.19"
+        "Assignment average \u2264 5.40",
+        "Assignment average \u2264 4.42",
+        "Assignment average \u2264 3.50",
+        "VLE engagement > 16.05",
+        "Presentation > 1.50"
       ],
-      "samples": 136,
-      "high_risk_pct": 96.7
+      "samples": 133,
+      "high_risk_pct": 96.6
     },
     {
       "conditions": [
-        "Assignment average ≤ 5.40",
-        "Previous SGPA ≤ 4.42",
-        "Previous SGPA ≤ 3.75",
-        "VLE engagement > 13.40",
-        "Internal marks > 0.50"
+        "Assignment average \u2264 5.40",
+        "Assignment average \u2264 4.42",
+        "Assignment average > 3.50",
+        "Presentation > 1.50",
+        "Assignment average \u2264 4.19"
       ],
-      "samples": 295,
+      "samples": 188,
       "high_risk_pct": 95.8
     },
     {
       "conditions": [
-        "Assignment average ≤ 5.40",
-        "Previous SGPA ≤ 4.42",
-        "Previous SGPA ≤ 3.75",
-        "VLE engagement > 13.40",
-        "Internal marks ≤ 0.50"
+        "Assignment average \u2264 5.40",
+        "Assignment average \u2264 4.42",
+        "Assignment average \u2264 3.50",
+        "VLE engagement > 16.05",
+        "Presentation \u2264 1.50"
       ],
-      "samples": 128,
-      "high_risk_pct": 89.6
+      "samples": 125,
+      "high_risk_pct": 89.4
     },
     {
       "conditions": [
-        "Assignment average ≤ 5.40",
-        "Previous SGPA ≤ 4.42",
-        "Previous SGPA > 3.75",
-        "Semester ≤ 1.50",
-        "Internal marks > 40.75"
+        "Assignment average \u2264 5.40",
+        "Assignment average > 4.42",
+        "Presentation > 1.50",
+        "Assignment average \u2264 5.04",
+        "VLE engagement > 8.40"
       ],
-      "samples": 138,
-      "high_risk_pct": 88.8
+      "samples": 241,
+      "high_risk_pct": 82.2
     }
   ],
   "clusters": [
     {
       "label": "High performers",
-      "count": 1608,
-      "avg_sgpa": 8.04,
-      "avg_attendance": 76.3,
-      "avg_readiness": 81.2,
-      "avg_risk": 0.253,
-      "avg_study_hours": 217.5,
+      "count": 1479,
+      "avg_sgpa": 8.06,
+      "avg_attendance": 77.2,
+      "avg_readiness": 81.5,
+      "avg_risk": 0.2512,
+      "avg_study_hours": 223.5,
       "description": "Strong academics, consistent engagement and placement-ready skills."
     },
     {
       "label": "Steady core",
-      "count": 7519,
-      "avg_sgpa": 7.85,
-      "avg_attendance": 50.9,
+      "count": 7249,
+      "avg_sgpa": 7.79,
+      "avg_attendance": 52.2,
       "avg_readiness": 73.4,
-      "avg_risk": 0.3108,
-      "avg_study_hours": 75.1,
+      "avg_risk": 0.3138,
+      "avg_study_hours": 78.6,
       "description": "Reliable mid-band cohort; small nudges unlock placement readiness."
     },
     {
       "label": "Engaged improvers",
-      "count": 13263,
-      "avg_sgpa": 6.77,
-      "avg_attendance": 19.8,
-      "avg_readiness": 57.6,
-      "avg_risk": 0.5029,
-      "avg_study_hours": 21.7,
+      "count": 13695,
+      "avg_sgpa": 6.83,
+      "avg_attendance": 20.1,
+      "avg_readiness": 58.0,
+      "avg_risk": 0.4956,
+      "avg_study_hours": 22.0,
       "description": "High effort with uneven results; targeted subject support pays off."
     },
     {
       "label": "Disengaged",
-      "count": 2756,
-      "avg_sgpa": 6.42,
-      "avg_attendance": 20.8,
-      "avg_readiness": 55.0,
-      "avg_risk": 0.5794,
-      "avg_study_hours": 23.7,
+      "count": 2782,
+      "avg_sgpa": 6.43,
+      "avg_attendance": 20.9,
+      "avg_readiness": 55.1,
+      "avg_risk": 0.578,
+      "avg_study_hours": 23.9,
       "description": "Low VLE engagement and active study days are dragging performance down."
     },
     {
       "label": "Critical support",
-      "count": 7447,
-      "avg_sgpa": 0.26,
-      "avg_attendance": 2.8,
-      "avg_readiness": 2.8,
-      "avg_risk": 0.7993,
-      "avg_study_hours": 3.4,
+      "count": 7388,
+      "avg_sgpa": 0.21,
+      "avg_attendance": 2.7,
+      "avg_readiness": 2.4,
+      "avg_risk": 0.8015,
+      "avg_study_hours": 3.2,
       "description": "Multiple compounding risk factors; needs faculty intervention now."
     }
   ],
@@ -248,39 +253,24 @@
   "feature_names": {
     "attendance_pct": "VLE engagement",
     "assignment_avg": "Assignment average",
-    "internal_avg": "Internal marks",
-    "ai_flag_rate": "AI-flagged submissions",
-    "prev_backlogs": "Previous backlogs",
-    "prev_sgpa": "Previous SGPA",
-    "semester": "Semester"
+    "prev_backlogs": "Previous attempts",
+    "semester": "Presentation"
   },
   "feature_importances": {
-    "attendance_pct": 0.1014,
-    "assignment_avg": 0.3707,
-    "internal_avg": 0.3328,
-    "ai_flag_rate": 0.0,
-    "prev_backlogs": 0.057,
-    "prev_sgpa": 0.0841,
-    "semester": 0.054
+    "attendance_pct": 0.2393,
+    "assignment_avg": 0.6195,
+    "prev_backlogs": 0.0669,
+    "semester": 0.0743
   },
   "extended_feature_names": {
     "attendance_pct": "VLE engagement",
     "assignment_avg": "Assignment average",
-    "internal_avg": "Internal marks",
-    "ai_flag_rate": "AI-flagged submissions",
-    "prev_backlogs": "Previous backlogs",
-    "prev_sgpa": "Previous SGPA",
-    "semester": "Semester",
-    "practical_avg": "Exam / practical marks",
-    "assignment_completion": "Assignment completion",
-    "study_hours": "VLE clicks / week",
-    "library_visits": "Active study days",
-    "lms_activity": "VLE clicks",
-    "coding_skill": "Coding skill",
-    "communication_skill": "Communication skill",
-    "certifications": "Certifications",
-    "internship_months": "Internship months",
-    "placement_readiness": "Placement readiness (derived)"
+    "prev_backlogs": "Previous attempts",
+    "semester": "Presentation",
+    "assignment_completion": "Assignment completion (early)",
+    "study_hours": "VLE clicks / week (early)",
+    "library_visits": "Active study days (early)",
+    "lms_activity": "VLE clicks (early)"
   },
   "extended_stats": {
     "attendance_pct": {
@@ -291,29 +281,13 @@
       "mean": 5.73,
       "std": 3.32
     },
-    "internal_avg": {
-      "mean": 57.27,
-      "std": 33.16
-    },
-    "ai_flag_rate": {
-      "mean": 0.0,
-      "std": 0.0
-    },
     "prev_backlogs": {
       "mean": 0.16,
       "std": 0.48
     },
-    "prev_sgpa": {
-      "mean": 5.73,
-      "std": 3.32
-    },
     "semester": {
       "mean": 1.38,
       "std": 0.49
-    },
-    "practical_avg": {
-      "mean": 9.98,
-      "std": 24.88
     },
     "assignment_completion": {
       "mean": 70.13,
@@ -330,26 +304,6 @@
     "lms_activity": {
       "mean": 579.98,
       "std": 803.17
-    },
-    "coding_skill": {
-      "mean": 0.0,
-      "std": 0.0
-    },
-    "communication_skill": {
-      "mean": 0.0,
-      "std": 0.0
-    },
-    "certifications": {
-      "mean": 0.0,
-      "std": 0.0
-    },
-    "internship_months": {
-      "mean": 0.0,
-      "std": 0.0
-    },
-    "placement_readiness": {
-      "mean": 49.67,
-      "std": 28.35
     }
   },
   "stats": {
@@ -361,21 +315,9 @@
       "mean": 5.73,
       "std": 3.32
     },
-    "internal_avg": {
-      "mean": 57.27,
-      "std": 33.16
-    },
-    "ai_flag_rate": {
-      "mean": 0.0,
-      "std": 0.0
-    },
     "prev_backlogs": {
       "mean": 0.16,
       "std": 0.48
-    },
-    "prev_sgpa": {
-      "mean": 5.73,
-      "std": 3.32
     },
     "semester": {
       "mean": 1.38,
@@ -385,5 +327,10 @@
   "tiers": {
     "high": 0.6,
     "medium": 0.32
+  },
+  "evaluation": {
+    "split": "GroupShuffleSplit by learner (80/20)",
+    "test_learners": 5757,
+    "feature_window": "Early 40% of the presentation only"
   }
 }

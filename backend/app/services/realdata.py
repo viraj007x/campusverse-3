@@ -192,7 +192,7 @@ def build_records(force: bool = False) -> list[dict]:
                 "internal_avg": round(early_score, 1),
                 "ai_flag_rate": 0.0,
                 "prev_backlogs": int(r.num_of_prev_attempts),
-                "prev_sgpa": round(early_score / 10, 2),
+                "prev_sgpa": 0.0,  # OULAD has no prior-SGPA field; kept at zero rather than inventing one
                 "final_sgpa": round(final_score / 10, 2),
                 "risk_score": risk,
                 "risk_label": label,
